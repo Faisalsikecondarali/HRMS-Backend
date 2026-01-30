@@ -306,8 +306,8 @@ const seedTestUsersHandler = async (_req: Request, res: Response) => {
     const testUsers = [
       {
         name: 'System Admin',
-        email: 'admin@company.com',
-        password: 'admin123',
+        email: 'admin@hrms.bitlyt.com',
+        password: 'Admin@2026',
         role: 'admin',
         department: 'IT',
         phone: '+92 300 2222222',
@@ -316,8 +316,8 @@ const seedTestUsersHandler = async (_req: Request, res: Response) => {
       },
       {
         name: 'HR Manager',
-        email: 'hr@company.com',
-        password: 'password123',
+        email: 'hr@hrms.bitlyt.com',
+        password: 'HR@2026',
         role: 'hr',
         department: 'Human Resources',
         phone: '+92 300 1111111',
@@ -326,8 +326,8 @@ const seedTestUsersHandler = async (_req: Request, res: Response) => {
       },
       {
         name: 'Staff Member',
-        email: 'staff@company.com',
-        password: 'staff123',
+        email: 'staff@hrms.bitlyt.com',
+        password: 'Staff@2026',
         role: 'staff',
         department: 'Operations',
         phone: '+92 300 3333333',
@@ -336,8 +336,8 @@ const seedTestUsersHandler = async (_req: Request, res: Response) => {
       },
       {
         name: 'Business Owner',
-        email: 'owner@company.com',
-        password: 'owner123',
+        email: 'owner@hrms.bitlyt.com',
+        password: 'Owner@2026',
         role: 'owner',
         department: 'Executive',
         phone: '+92 300 4444444',
