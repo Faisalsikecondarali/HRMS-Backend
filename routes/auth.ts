@@ -8,12 +8,6 @@ import mongoose from 'mongoose';
 
 const router = Router();
 
-// Test route
-router.get('/test', (req, res) => {
-  console.log('🧪 TEST ROUTE CALLED!!!');
-  res.json({ message: 'Auth routes are working!' });
-});
-
 const isDBConnected = () => mongoose.connection.readyState === 1;
 
 // Register new user (admin only)

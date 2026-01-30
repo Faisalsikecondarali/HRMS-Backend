@@ -13,37 +13,11 @@ import bcrypt from 'bcryptjs';
 import { Shift } from '../models/Shift';
 import fs from 'fs/promises';
 import path from 'path';
-import multer from 'multer';
+import { upload as uploadMiddleware, uploadToCloudinary } from '../utils/upload';
 
 const router = Router();
-const uploadsDir = path.resolve('uploads');
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({ 
-  storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
-  },
-  fileFilter: (req, file, cb) => {
-    if (file.fieldname === 'profilePicture' && file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else if (file.fieldname === 'cv' && (file.mimetype === 'application/pdf' || file.mimetype.includes('document'))) {
-      cb(null, true);
-    } else {
-      cb(new Error('Invalid file type'));
-    }
-  }
-});
+const uploadsDir = path.resolve(process.env.UPLOADS_DIR || 'uploads');
+const upload = uploadMiddleware;
 
 router.post('/reset', authenticateToken, requireRole(['admin']), async (req: AuthRequest, res: Response) => {
   try {
@@ -466,7 +440,11 @@ router.get('/staff', authenticateToken, requireRole(['admin']), async (req: Auth
     // Ensure profilePicture is included and properly formatted with full URLs
     const staffWithAvatars = staff.map((user: any) => {
       const profilePicture = (user as any).profilePicture;
-      const fullAvatarUrl = profilePicture ? `${req.protocol}://${req.get('host')}/uploads/${profilePicture.split('/').pop()}` : null;
+      const fullAvatarUrl = profilePicture
+        ? (String(profilePicture).startsWith('http')
+          ? profilePicture
+          : `${req.protocol}://${req.get('host')}/uploads/${String(profilePicture).split('/').pop()}`)
+        : null;
       
       return {
         ...user,
@@ -521,11 +499,19 @@ router.post('/staff', authenticateToken, requireRole(['admin']), upload.fields([
     let cvPath = null;
     
     if (files?.profilePicture && files.profilePicture.length > 0) {
-      profilePicturePath = `/uploads/${files.profilePicture[0].filename}`;
+      const uploaded = await uploadToCloudinary(files.profilePicture[0], {
+        folder: "attendance-system/avatars",
+        resource_type: "image",
+      });
+      profilePicturePath = uploaded.secureUrl;
     }
     
     if (files?.cv && files.cv.length > 0) {
-      cvPath = `/uploads/${files.cv[0].filename}`;
+      const uploaded = await uploadToCloudinary(files.cv[0], {
+        folder: "attendance-system/documents",
+        resource_type: "auto",
+      });
+      cvPath = uploaded.secureUrl;
     }
 
     // Create staff member with optional fields
@@ -2047,7 +2033,11 @@ router.post('/profile/upload-image', authenticateToken, requireRole(['admin']), 
       return res.status(400).json({ message: 'No image file provided' });
     }
 
-    const imagePath = `/uploads/${req.file.filename}`;
+    const uploaded = await uploadToCloudinary(req.file, {
+      folder: "attendance-system/avatars",
+      resource_type: "image",
+    });
+    const imagePath = uploaded.secureUrl;
 
     // Update user's profile picture
     const updatedUser = await User.findByIdAndUpdate(

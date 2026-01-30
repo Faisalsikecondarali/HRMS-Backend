@@ -3,14 +3,13 @@ import mongoose from 'mongoose';
 import { authenticateToken, requireRole, AuthRequest } from '../middleware/auth';
 import { User } from '../models/User';
 import { SalaryPlan } from '../models/SalaryPlan';
-import { upload } from '../utils/upload';
+import { upload, uploadToCloudinary } from '../utils/upload';
 import fs from 'fs/promises';
 import path from 'path';
 
 const router = express.Router();
 
-// Get all users from MongoDB
-router.get('/all', authenticateToken, requireRole(['admin']), async (req: any, res: Response) => {
+// ... (rest of the code remains the same)
   try {
     const users = await User.find({ isActive: true })
       .select('-password')
@@ -232,8 +231,11 @@ router.post('/upload-avatar', authenticateToken, upload.single('avatar'), async 
       });
     }
 
-    // Generate avatar URL
-    const avatarUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    const uploaded = await uploadToCloudinary(req.file, {
+      folder: "attendance-system/avatars",
+      resource_type: "image",
+    });
+    const avatarUrl = uploaded.secureUrl;
     
     // Update user's profilePicture URL in User model
     const updatedUser = await User.findByIdAndUpdate(
@@ -252,8 +254,7 @@ router.post('/upload-avatar', authenticateToken, upload.single('avatar'), async 
     console.log('Avatar uploaded for user:', userId);
     console.log('Avatar URL:', avatarUrl);
 
-    // Return full URL for frontend compatibility
-    const fullAvatarUrl = avatarUrl ? `${req.protocol}://${req.get('host')}/uploads/${avatarUrl.split('/').pop()}` : null;
+    const fullAvatarUrl = avatarUrl;
 
     res.json({
       success: true,
@@ -261,7 +262,7 @@ router.post('/upload-avatar', authenticateToken, upload.single('avatar'), async 
       data: {
         avatarUrl: fullAvatarUrl, // Return full URL for Flutter compatibility
         profilePicture: fullAvatarUrl,
-        filename: req.file.filename,
+        filename: uploaded.publicId,
         size: req.file.size,
         mimetype: req.file.mimetype
       }

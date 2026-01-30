@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { authenticateToken, requireRole, AuthRequest } from "../middleware/auth";
 import { Profile } from "../models/Profile";
-import { upload } from "../utils/upload";
+import { upload, uploadToCloudinary } from "../utils/upload";
 import fs from "fs/promises";
 import path from "path";
 
 const router = Router();
+const uploadsDir = path.resolve(process.env.UPLOADS_DIR || "uploads");
 
 // Get my profile
 router.get(
@@ -51,7 +52,11 @@ router.post(
       let avatarUrl = req.body.avatarUrl as string | undefined;
 
       if (req.file) {
-        avatarUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+        const uploaded = await uploadToCloudinary(req.file, {
+          folder: "attendance-system/avatars",
+          resource_type: "image",
+        });
+        avatarUrl = uploaded.secureUrl;
       }
 
       if (!avatarUrl) {
@@ -63,7 +68,7 @@ router.post(
         const idx = existing.avatarUrl.indexOf("/uploads/");
         if (idx !== -1) {
           const filename = existing.avatarUrl.slice(idx + "/uploads/".length);
-          const filePath = path.resolve("uploads", filename);
+          const filePath = path.join(uploadsDir, filename);
           try {
             await fs.unlink(filePath);
           } catch (err: any) {
@@ -103,10 +108,18 @@ router.post(
       const files = req.files as Record<string, Express.Multer.File[]>;
       const update: Partial<any> = {};
       if (files?.cnic?.[0]) {
-        update.cnicImageUrl = `${req.protocol}://${req.get("host")}/uploads/${files.cnic[0].filename}`;
+        const uploaded = await uploadToCloudinary(files.cnic[0], {
+          folder: "attendance-system/documents",
+          resource_type: "image",
+        });
+        update.cnicImageUrl = uploaded.secureUrl;
       }
       if (files?.cv?.[0]) {
-        update.cvUrl = `${req.protocol}://${req.get("host")}/uploads/${files.cv[0].filename}`;
+        const uploaded = await uploadToCloudinary(files.cv[0], {
+          folder: "attendance-system/documents",
+          resource_type: "auto",
+        });
+        update.cvUrl = uploaded.secureUrl;
       }
       if (!update.cnicImageUrl && !update.cvUrl) {
         return res.status(400).json({ message: "CNIC or CV file is required" });

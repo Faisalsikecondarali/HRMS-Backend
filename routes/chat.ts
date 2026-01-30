@@ -6,7 +6,7 @@ import { ChatConversation } from '../models/ChatConversation';
 import { ChatMessage } from '../models/ChatMessage';
 import { DepartmentMessage } from '../models/DepartmentMessage';
 import { createAndNotify } from '../utils/notifier';
-import { upload } from '../utils/upload';
+import { upload, uploadToCloudinary } from '../utils/upload';
 
 const router = Router();
 
@@ -238,7 +238,11 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req: Aut
     const isParticipant = convo.participants.some(p => p.toString() === me || p.toString() === (to || ''));
     if (!isParticipant) return res.status(403).json({ message: 'Forbidden' });
 
-    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    const uploaded = await uploadToCloudinary(req.file, {
+      folder: "attendance-system/chat",
+      resource_type: req.file.mimetype.startsWith("image/") ? "image" : "auto",
+    });
+    const fileUrl = uploaded.secureUrl;
     const msgType: 'image' | 'file' = req.file.mimetype.startsWith('image/') ? 'image' : 'file';
 
     const otherId = to || convo.participants.find(p => p.toString() !== me)!.toString();

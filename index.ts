@@ -23,6 +23,8 @@ import hrRoutes from "./routes/hr";
 export async function createServer() {
   const app = express();
 
+  app.set("trust proxy", 1);
+
   // Connect to MongoDB
   await connectDB();
 
@@ -55,7 +57,7 @@ export async function createServer() {
   app.use(express.urlencoded({ extended: true }));
 
   // Static uploads serving
-  app.use("/uploads", express.static(path.resolve("uploads")));
+  app.use("/uploads", express.static(path.resolve(process.env.UPLOADS_DIR || "uploads")));
 
   // Example API routes
   app.get("/api/ping", (_req, res) => {

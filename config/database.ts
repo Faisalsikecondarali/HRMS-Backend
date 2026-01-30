@@ -4,7 +4,11 @@ const connectDB = async (): Promise<void> => {
   try {
     const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/attendance-system';
 
-    await mongoose.connect(mongoURI);
+    if (process.env.NODE_ENV === 'production' && !process.env.MONGODB_URI) {
+      throw new Error('MONGODB_URI is required in production');
+    }
+
+    await mongoose.connect(mongoURI, {});
 
     console.log('✅ MongoDB connected successfully');
   } catch (error) {
