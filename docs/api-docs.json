@@ -1,0 +1,115 @@
+{
+  "info": {
+    "title": "BulkBytes API Documentation",
+    "version": "1.0.0",
+    "description": "Complete backend API reference with request/response examples."
+  },
+  "auth": {
+    "scheme": "Bearer",
+    "header": "Authorization: Bearer <token>"
+  },
+  "endpoints": [
+    {
+      "group": "Auth",
+      "method": "POST",
+      "path": "/api/auth/login",
+      "auth": false,
+      "request": {
+        "body": { "email": "user@example.com", "password": "secret123" }
+      },
+      "responses": [
+        {
+          "status": 200,
+          "body": {
+            "message": "Login successful",
+            "token": "<JWT>",
+            "user": { "id": "663f...", "name": "John", "email": "user@example.com", "role": "staff" }
+          }
+        },
+        { "status": 401, "body": { "message": "Invalid credentials" } }
+      ]
+    },
+    {
+      "group": "Auth",
+      "method": "POST",
+      "path": "/api/auth/register",
+      "auth": "admin",
+      "request": {
+        "body": { "name": "Jane", "email": "jane@example.com", "password": "secret123", "role": "staff" }
+      },
+      "responses": [
+        {
+          "status": 201,
+          "body": { "message": "User created", "user": { "id": "...", "name": "Jane", "email": "jane@example.com", "role": "staff" } }
+        },
+        { "status": 400, "body": { "message": "User exists" } }
+      ]
+    },
+
+    { "group": "Profile", "method": "GET", "path": "/api/profile/me", "auth": true,
+      "responses": [{ "status": 200, "body": { "profile": { "user": "663f...", "avatarUrl": "http://.../uploads/a.png", "isComplete": true } } }] },
+    { "group": "Profile", "method": "GET", "path": "/api/profile/:userId", "auth": "admin",
+      "params": { "userId": "663f..." },
+      "responses": [{ "status": 200, "body": { "profile": { "user": "663f...", "avatarUrl": null, "isComplete": true } } }] },
+    { "group": "Profile", "method": "PATCH", "path": "/api/profile/me/avatar", "auth": true,
+      "request": { "formData": { "avatar": "<file>" } },
+      "responses": [{ "status": 200, "body": { "message": "Avatar updated", "profile": { "avatarUrl": "http://.../uploads/a.png" } } }] },
+    { "group": "Profile", "method": "POST", "path": "/api/profile/:userId/avatar", "auth": "admin",
+      "params": { "userId": "663f..." },
+      "request": { "formData": { "avatar": "<file>" } },
+      "responses": [{ "status": 200, "body": { "message": "Avatar updated" } }] },
+
+    { "group": "Notifications", "method": "GET", "path": "/api/notifications", "auth": true,
+      "responses": [{ "status": 200, "body": { "notifications": [] } }] },
+
+    { "group": "Salaries", "method": "GET", "path": "/api/salaries", "auth": "admin",
+      "query": { "status": "pending|approved|paid|received", "month": "YYYY-MM", "employeeId": "663f...", "source": "admin|staff" },
+      "responses": [{ "status": 200, "body": { "salaries": [{ "id": "...", "employeeId": "...", "month": "2025-11", "amount": 120000, "status": "pending", "sentToAccounts": false, "createdAt": "ISO" }] } }] },
+    { "group": "Salaries", "method": "GET", "path": "/api/salaries/mine", "auth": true,
+      "responses": [{ "status": 200, "body": { "salaries": [{ "id": "...", "month": "2025-11", "amount": 120000, "status": "received", "sentToAccounts": true, "createdAt": "ISO" }] } }] },
+    { "group": "Salaries", "method": "POST", "path": "/api/salaries/create", "auth": "admin",
+      "request": { "body": { "employeeId": "663f...", "month": "2025-11", "amount": 120000 } },
+      "responses": [{ "status": 201, "body": { "message": "Salary created", "salary": { "id": "...", "employeeId": "...", "month": "2025-11", "amount": 120000, "status": "pending" } } }] },
+    { "group": "Salaries", "method": "PATCH", "path": "/api/salaries/update-status", "auth": true,
+      "request": { "body": { "salaryId": "6740...", "status": "approved|paid|received" } },
+      "responses": [{ "status": 200, "body": { "message": "Status updated", "salary": { "id": "...", "status": "received", "sentToAccounts": false } } }] },
+    { "group": "Salaries", "method": "PATCH", "path": "/api/salaries/send-to-accounts", "auth": "admin",
+      "request": { "body": { "salaryId": "6740..." } },
+      "responses": [{ "status": 200, "body": { "message": "Marked as sent to accounts", "salary": { "id": "...", "sentToAccounts": true } } }] },
+
+    { "group": "Salary Plans", "method": "PUT", "path": "/api/salaries/plan/:userId", "auth": "admin",
+      "params": { "userId": "663f..." },
+      "request": { "body": { "baseAmount": 120000, "active": true } },
+      "responses": [{ "status": 200, "body": { "message": "Plan saved", "plan": { "userId": "...", "baseAmount": 120000, "active": true } } }] },
+    { "group": "Salary Plans", "method": "GET", "path": "/api/salaries/plan/:userId", "auth": "admin",
+      "params": { "userId": "663f..." },
+      "responses": [{ "status": 200, "body": { "plan": { "userId": "...", "baseAmount": 120000, "active": true } } }] },
+    { "group": "Salary Plans", "method": "GET", "path": "/api/salaries/plan/me", "auth": true,
+      "responses": [{ "status": 200, "body": { "plan": { "userId": "...", "baseAmount": 120000, "active": true } } }] },
+
+    { "group": "Salary Requests", "method": "POST", "path": "/api/salaries/request", "auth": true,
+      "request": { "body": { "month": "2025-11" } },
+      "responses": [{ "status": 201, "body": { "message": "Salary request submitted", "salary": { "id": "...", "source": "staff", "status": "pending" } } }] },
+
+    { "group": "Salary Issues", "method": "POST", "path": "/api/salaries/issues", "auth": true,
+      "request": { "body": { "salaryId": "6740...", "message": "Didn't receive full amount" } },
+      "responses": [{ "status": 201, "body": { "message": "Issue reported", "issue": { "id": "...", "resolved": false } } }] },
+
+    { "group": "Shifts", "method": "GET", "path": "/api/shifts", "auth": "admin",
+      "query": { "from": "2025-11-01", "to": "2025-11-30", "userId": "663f..." },
+      "responses": [{ "status": 200, "body": { "assignments": [{ "id": "...", "userId": "...", "date": "2025-11-15", "startTime": "09:00", "endTime": "17:00" }] } }] },
+    { "group": "Shifts", "method": "POST", "path": "/api/shifts/assign", "auth": "admin",
+      "request": { "body": { "userId": "663f...", "date": "2025-11-15", "startTime": "09:00", "endTime": "17:00" } },
+      "responses": [{ "status": 201, "body": { "message": "Shift assigned", "assignment": { "id": "..." } } }] },
+    { "group": "Shifts", "method": "GET", "path": "/api/shifts/mine/today", "auth": true,
+      "responses": [{ "status": 200, "body": { "assignment": { "date": "2025-11-15", "startTime": "09:00", "endTime": "17:00" } } }] },
+    { "group": "Shifts", "method": "GET", "path": "/api/shifts/mine", "auth": true,
+      "query": { "from": "2025-11-01", "to": "2025-11-30" },
+      "responses": [{ "status": 200, "body": { "assignments": [{ "date": "2025-11-22", "startTime": "09:00", "endTime": "17:00" }] } }] },
+
+    { "group": "Attendance", "method": "POST", "path": "/api/attendance/checkin", "auth": true,
+      "responses": [{ "status": 201, "body": { "message": "Checked in successfully", "attendance": { "id": "...", "date": "2025-11-15", "checkIn": "ISO", "scheduledStart": "09:00", "lateMinutes": 7, "status": "checked-in" } } }] },
+    { "group": "Attendance", "method": "PUT", "path": "/api/attendance/checkout", "auth": true,
+      "responses": [{ "status": 200, "body": { "message": "Checked out successfully", "attendance": { "id": "...", "totalHours": "8h 15m", "status": "checked-out" } } }] }
+  ]
+}
