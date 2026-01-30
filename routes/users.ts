@@ -9,7 +9,8 @@ import path from 'path';
 
 const router = express.Router();
 
-// ... (rest of the code remains the same)
+// Get all users
+router.get('/', authenticateToken, requireRole(['admin']), async (req: any, res: Response) => {
   try {
     const users = await User.find({ isActive: true })
       .select('-password')
