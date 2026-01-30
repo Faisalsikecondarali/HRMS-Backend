@@ -3,6 +3,7 @@ import { createServer } from "./index";
 import * as express from "express";
 import http from "http";
 import { initSocket } from "./realtime/socket";
+import fs from "fs";
 
 async function startServer() {
   const app = await createServer();
@@ -12,18 +13,24 @@ async function startServer() {
   const __dirname = import.meta.dirname;
   const distPath = path.join(__dirname, "../spa");
 
-  // Serve static files
-  app.use(express.static(distPath));
+  const spaIndexPath = path.join(distPath, "index.html");
+  const hasSpaBuild = fs.existsSync(spaIndexPath);
 
-  // Handle React Router - serve index.html for all non-API routes
-  app.get("*", (req, res) => {
-    // Don't serve index.html for API routes
-    if (req.path.startsWith("/api/") || req.path.startsWith("/health")) {
-      return res.status(404).json({ error: "API endpoint not found" });
-    }
+  if (hasSpaBuild) {
+    // Serve static files
+    app.use(express.static(distPath));
 
-    res.sendFile(path.join(distPath, "index.html"));
-  });
+    // Handle React Router - serve index.html for all non-API routes
+    app.get("*", (req, res) => {
+      // Don't serve index.html for API routes
+      if (req.path.startsWith("/api/") || req.path.startsWith("/health")) {
+        return res.status(404).json({ error: "API endpoint not found" });
+      }
+
+      res.sendFile(spaIndexPath);
+    });
+  }
+
   const server = http.createServer(app);
   initSocket(server);
   server.listen(port, "0.0.0.0", () => {
